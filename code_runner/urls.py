@@ -3,8 +3,8 @@ from rest_framework import routers
 from .views import CodeSnippetViewSet
 
 router = routers.DefaultRouter()
-router.register('code-snippets', CodeSnippetViewSet)
+router.register('run-python', CodeSnippetViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
