@@ -22,7 +22,7 @@ def execute_code(request):
     return Response({'output': output})
 
 def execute_nodejs(code, input_text):
-    # Write the code to a temporary file
+    # Write the code to a temporary files
     with open('temp.js', 'w') as file:
         file.write(code)
 
