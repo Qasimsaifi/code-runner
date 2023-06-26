@@ -22,15 +22,20 @@ def execute_code(request):
     return Response({'output': output})
 
 def execute_nodejs(code, input_text):
-    # Write the code to a temporary files
+    # Write the code to a temporary file
     with open('temp.js', 'w') as file:
         file.write(code)
 
     # Execute the code and capture the output
     try:
-        output = subprocess.check_output(['node', 'temp.js'], stderr=subprocess.STDOUT, input=input_text, timeout=5, universal_newlines=True)
-    except subprocess.CalledProcessError as e:
-        output = e.output
+        cmd = f'node temp.js'
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, universal_newlines=True)
+        output, _ = process.communicate(input=input_text, timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        output = 'Execution timed out.'
+    except Exception as e:
+        output = str(e)
 
     # Remove the temporary file
     os.remove('temp.js')
