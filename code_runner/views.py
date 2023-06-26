@@ -1,60 +1,46 @@
-from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-from .serializers import CodeSnippetSerializer
-from .models import CodeSnippet
-import io
-import sys
+import subprocess
+import os
 
-class CodeSnippetViewSet(ModelViewSet):
-    queryset = CodeSnippet.objects.all()
-    serializer_class = CodeSnippetSerializer
+@api_view(['POST'])
+def execute_code(request):
+    code = request.data.get('code')
+    language = request.data.get('language')
+    input_text = request.data.get('input')
 
-    def execute_code(self, code, user_input):
-        try:
-            # Create a namespace dictionary for execution
-            namespace = {}
+    if language == 'node':
+        # Execute Node.js code and capture the output
+        output = execute_nodejs(code, input_text)
+    elif language == 'python':
+        # Execute Python code and capture the output
+        output = execute_python(code, input_text)
+    else:
+        # Invalid language
+        return Response({'error': 'Invalid language'}, status=400)
 
-            # Redirect the standard output to a variable
-            stdout = io.StringIO()
-            sys.stdout = stdout
+    return Response({'output': output})
 
-            # Redirect the standard input to a variable
-            stdin = io.StringIO(user_input)
-            sys.stdin = stdin
+def execute_nodejs(code, input_text):
+    # Execute Node.js code and capture the output
+    # Implement code execution logic for Node.js
+    pass
 
-            # Execute the code within the namespace
-            exec(code, namespace)
+def execute_python(code, input_text):
+    # Convert the input_text to a string
+    input_text = str(input_text)
 
-            # Capture the output
-            output = stdout.getvalue()
-            errors = None
-        except Exception as e:
-            # Capture any errors that occur during code execution
-            output = ''
-            errors = str(e)
-        finally:
-            # Restore the standard output, standard input, and clear the namespace
-            sys.stdout = sys.__stdout__
-            sys.stdin = sys.__stdin__
-            namespace.clear()
+    # Write the code to a temporary file
+    with open('temp.py', 'w') as file:
+        file.write(code)
 
-        return output, errors
+    # Execute the code and capture the output
+    try:
+        output = subprocess.check_output(['python', 'temp.py'], stderr=subprocess.STDOUT, input=input_text, timeout=5, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        output = e.output
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    # Remove the temporary file
+    os.remove('temp.py')
 
-        # Get the user input from the serializer
-        user_input = serializer.validated_data.get('user_input', '')
-
-        # Execute the code with user input
-        output, errors = self.execute_code(serializer.validated_data['code'], user_input)
-
-        response_data = {
-            'code': serializer.validated_data['code'],
-            'output': output,
-            'errors': errors,
-        }
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
+    return output

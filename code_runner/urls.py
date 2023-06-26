@@ -1,10 +1,7 @@
-from django.urls import path, include
-from rest_framework import routers
-from .views import CodeSnippetViewSet
-
-router = routers.DefaultRouter()
-router.register('run-python', CodeSnippetViewSet)
+# code_editor/urls.py
+from django.urls import path
+from .views import execute_code
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('execute/', execute_code, name='execute_code'),
 ]
